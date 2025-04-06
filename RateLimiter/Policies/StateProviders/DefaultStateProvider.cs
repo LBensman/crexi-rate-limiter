@@ -1,36 +1,62 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace RateLimiter.Policies.StateProviders;
 
 /// <summary>
-///
+/// Policy state provider that uses locally memory for storing policy state.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Note that <see cref="DefaultStateProvider"/> is not designed or intended to be used with more than
 /// one <see cref="RateLimiter"/> instance in the same process.  Due to use of static members to store
 /// data, multiple instances can potentially interact with unintended effects, especially in case where
-/// request keys collide.
+/// request keys collide.  While limitation exists currently, in the future, it may be eliminated
+/// to allow for more flexibility, if it's determined that more than one rate limiter backed by this
+/// provider support is needed.
 /// </para>
 /// </remarks>
 public class DefaultStateProvider : IPolicyStateProvider
 {
     private static readonly object _dummy = new();  // hack: dummy var to make switch expression on template type work syntactically.
 
+    /// <summary>
+    /// Options to specify behavior of <see cref="DefaultStateProvider"/>.
+    /// </summary>
     public struct Options
     {
+        /// <summary>
+        /// Enum to indicate precision options.
+        /// </summary>
         public enum PrecisionOption
         {
+            /// <summary>
+            /// Strict precision.
+            /// </summary>
+            /// <remarks>
+            /// <para>
+            /// Indicates that policy should favor use of strict precision evaluation algorithms over performance, valuing exactness over performance.
+            /// </para>
+            /// </remarks>
             Strict,
+
+            /// <summary>
+            /// Performance precision.
+            /// </summary>
+            /// <remarks>
+            /// <para>
+            /// Indicates that policy should favor performance over strict precision evaluation algorithms valuing performance over exactness, thus allowing for possibility of exceeding specified policy limits.
+            /// </para>
+            /// </remarks>
             Performance
         }
 
+        /// <summary>
+        /// Precision to use when evaluating policies.
+        /// </summary>
         public PrecisionOption Precision { get; init; }
     }
 
