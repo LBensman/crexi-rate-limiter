@@ -29,11 +29,51 @@ In approaching the problem, the following considerations, assumptions and acknow
 
 ### Design
 
+The design can generally be seen broken down in 3 major parts:
+
+* `RateLimiter`, the main class to which a request is passed for rate limiting evaluation.  It is generic and non-service specific.  It uses service-specific implementation of RequestProcessor for interoperability with applicable service.
+* RequestProcessor, a class that implements `IRequestProcessor` that has the following responsibilities.
+  * Integration into service context and injection of its request handling in service's request handling pipeline.
+  * Passing allowed requests to service and handling of rejected requests in service meaningful way.
+  * Mapping of service's way of marking of applicable policies to requests and provided services, e.g. API endpoints.<br />
+    For example, one specific implementation may use attribute decorations on handling methods to specify endpoints' applicable policies. Yet another may use attributes to decorate message payload types or possibly message payload fields to describe applicable policies.  Yet another way may be to have a registry generated on startup that provides mapping lookups at runtime for applicable policies. It all depends on the what is meaningful to the underlying services for which provider is written and how implementers chose to handle the policy references.
+* PolicyStateProvidera class that implements `IPolicyStateProvider` that is responsible for providing storage mechanism for policies' state and concrete implementation of general policy types.
+
+`RateLimiter` is instantiated with a specific RequestProcessor for specific service.
+
+RequestProcessor knows how to integrate into its specific service, how to handle accepted and rejected requests, and how to create mapping of endpoints and policies.  It also uses state provider for policy data store needs.  See example implementation `UberRpcServiceProcessor` for a hypothetical `UberRpcService` service.
+
 #### Extensibility
 
+Extensibility is achieved by keeping `RateLimiter` bare bones, deferring customization to the processor and state providers.
+
+Besides the provided basic policies, users can define additional policy types by simply extening from `RatePolicy`, and extending state provider to provide implementation of evaluation of that policy.
+
+The state provider itself is expected to be written such that it can be extended in some form.
+
+##### New Services
+
+After you had a chance to see how UberRpc is handled, now lets suppose that we want to use `RateLimter` with a new QuantumService.  This `QuantumServiceProcessor` would be a new processor (defined in some new library/project) that knows how to plug in into QuantumService.  However, quantrum world being bizarre, we now need a new policy kind that is not already provided by current solution.  Let's call this new policy `SchrödingerCatRatePolicy` and derive it from RatePolicy, and give it a property `WaveFunction` of some relevant type.
+
+For now, we'll be happy with running on a single box and thus happy with `DefaultStateProvider` that just uses local memory.  However, this provider doesn't know how to handle `SchrödingerCatRatePolicy`. Thus we can create new `QuantumLocalMemoryStateProvider` and derive it from `DefaultStateProvider` so that we don't need to reimplement existing policy kinds.
+
+In `QuantumLocalMemoryStateProvider` we'd `override GetPolicy<TPolicyType>()` to recognize new policy and provide concrete implementation, and call base for all others.  The concrete `ConcreteSchrödingerCatRatePolicy` will then have implementation of its logic of evaluating and collapsing policy's `WaveFunction` and memory for storing necessary data to perform its evaluations.
+
+Thus, we now provided new service support, and provided support for new policy type by extending existing code and only providing the additional, marginal functionality necessary for the new service.
+
+##### New State Stores
+
+Local memory-based `DefaultStateProvider` is just a default, simple provider, but not necessarily suitable for service farms, since policy state is local to each member of the farm.
+
+It's possible, however, to extend rate limiter by implementing new state providers.  Some such candidates are ones that use SQLServer, PostgreSQL, Reddis, Memcached, etc.
+
+Such implementations would, at minimum, need to provide concrete implementations for the basic policies, so as to know how to evaluate them using data stored in the respective technologies.
+
+When creating such new state providers, implementors should consider extensibility considerations in-turn, such as the example above where `SchrödingerCatRatePolicy` may be desired to work with non-local memory but with new state provider, and that new state provider can in-turn be extended to add support for `SchrödingerCatRatePolicy` while reusing all other policies.
+
 ### Limitations
-* There are a lot more unit tests possible, had to limit to basic, illustrative ones for time reasons.
-* Some test cases aren't supported, due to their fuzzy nature.  E.g. library hints for light support for efficiency mode to avoid locking at expense of imprecise results.  Performing statistical testing to cover these is beyond scope.  Some can be handled using the Fakes lib, which, too, kept out of scope.
+* There are a lot more unit tests possible, and had to limit to basic, illustrative ones for time reasons.
+* Some test cases aren't supported, due to their fuzzy nature.  E.g. library hints for light support for efficiency mode to avoid locking at expense of imprecise results.  Performing statistical testing to cover these is beyond scope.  Some can be handled using the Fakes lib, which, too, kept out of scope.  But, given the nature of the middleware and desire for middleware to be efficient, I did give a sample code on how rate limiter library can be made flexible and allow for flexible tradeoffs.
 * `DefaultDataStore` internally assumes that it's the only instance in the process, and only one `RateLimiter` using it exists.  It's not, however a hard limitation, and it could be changed with a bit more code to not have this limitation in the future.
 
 ## Original Problem Statement
