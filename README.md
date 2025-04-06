@@ -57,7 +57,7 @@ After you had a chance to see how UberRpc is handled, now lets suppose that we w
 
 For now, we'll be happy with running on a single box and thus happy with `DefaultStateProvider` that just uses local memory.  However, this provider doesn't know how to handle `SchrödingerCatRatePolicy`. Thus we can create new `QuantumLocalMemoryStateProvider` and derive it from `DefaultStateProvider` so that we don't need to reimplement existing policy kinds.
 
-In `QuantumLocalMemoryStateProvider` we'd `override GetPolicy<TPolicyType>()` to recognize new policy and provide concrete implementation, and call base for all others.  The concrete `ConcreteSchrödingerCatRatePolicy` will then have implementation of its logic of evaluating and collapsing policy's `WaveFunction` and memory for storing necessary data to perform its evaluations.
+In `QuantumLocalMemoryStateProvider` we'd `override GetPolicy<TPolicyType>()` to recognize new policy and provide concrete implementation, and call base for all others.  The concrete `ConcreteSchrödingerCatRatePolicy` will then have implementation of its logic of evaluating and collapsing policy's `WaveFunction` to determine the fate of the <strike>cat</strike> request, and memory for storing necessary data to perform its evaluations.
 
 Thus, we now provided new service support, and provided support for new policy type by extending existing code and only providing the additional, marginal functionality necessary for the new service.
 
