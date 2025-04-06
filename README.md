@@ -53,7 +53,7 @@ The state provider itself is expected to be written such that it can be extended
 
 ##### New Services
 
-After you had a chance to see how UberRpc is handled, now lets suppose that we want to use `RateLimter` with a new QuantumService.  This `QuantumServiceProcessor` would be a new processor (defined in some new library/project) that knows how to plug in into QuantumService.  However, quantrum world being bizarre, we now need a new policy kind that is not already provided by current solution.  Let's call this new policy `SchrödingerCatRatePolicy` and derive it from RatePolicy, and give it a property `WaveFunction` of some relevant type.
+After you had a chance to see how UberRpc is handled, now lets suppose that we want to use `RateLimter` with a new QuantumService.  This `QuantumServiceProcessor` would be a new processor (defined in some new library/project) that knows how to plug in into QuantumService.  However, quantrum world being bizarre, we now need a new policy kind that is not already provided by current solution.  Let's call this new policy `SchrödingerCatRatePolicy` and derive it from `RatePolicy`, and give it a property `WaveFunction` of some relevant type.
 
 For now, we'll be happy with running on a single box and thus happy with `DefaultStateProvider` that just uses local memory.  However, this provider doesn't know how to handle `SchrödingerCatRatePolicy`. Thus we can create new `QuantumLocalMemoryStateProvider` and derive it from `DefaultStateProvider` so that we don't need to reimplement existing policy kinds.
 
