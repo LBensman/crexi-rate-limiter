@@ -1,22 +1,22 @@
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace RateLimiter.Policies.StateProviders;
 
 /// <summary>
-///
+/// Policy state provider that uses locally memory for storing policy state.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Note that <see cref="DefaultStateProvider"/> is not designed or intended to be used with more than
 /// one <see cref="RateLimiter"/> instance in the same process.  Due to use of static members to store
 /// data, multiple instances can potentially interact with unintended effects, especially in case where
-/// request keys collide.
+/// request keys collide.  While limitation exists currently, in the future, it may be eliminated
+/// to allow for more flexibility, if it's determined that more than one rate limiter backed by this
+/// provider support is needed.
 /// </para>
 /// </remarks>
 public class DefaultStateProvider : IPolicyStateProvider

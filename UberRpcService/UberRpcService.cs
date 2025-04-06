@@ -27,6 +27,11 @@ public class UberRpcServiceResponseMessage
     public Exception? Exception { get; init; }
 }
 
+/// <summary>
+/// Some example, generic, not yet super popular or even yet-known and yet-heard-of super RPC
+/// service that one day will win over gRPC monopoly, like totally.
+/// </summary>
+/// <typeparam name="TService">Service interface to wrap RPC service over.</typeparam>
 public class UberRpcService<TService> where TService : class
 {
     private readonly TService _service;
